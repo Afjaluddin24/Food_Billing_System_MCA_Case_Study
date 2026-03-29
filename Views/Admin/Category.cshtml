@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "Category";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="col-md-12 m-auto">
+    <div class="card">
+        <div class="card-header bg-transparent">
+            <div class="col-md-6 text-start">Category</div>
+        </div>
+        <div class="card-body">
+            <div class="col-md-12">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6 mt-2 mb-2">
+                            <b>Category Name</b>
+                            <input type="hidden" id="categoryId" name="categoryId" />
+                            <input type="text" id="CategoryName" name="CategoryName" class="form-control" />
+                        </div>
+                        <div class="col-md-2 mt-3" style="padding-top:15px;">
+                            <button type="button" id="Save" class="btn btn-outline-warning w-100">Save</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="bg-info text-white mt-3 py-2">
+                    <b class="ms-3">Category Detals</b>
+                </div>
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="GetAllCategory">
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        GetAllCategory();
+        $("#Save").click(function(){
+            const requestData={
+                categoryId:$("#categoryId").val(),
+                categoryName:$("#CategoryName").val()
+            }
+            $("#Save").prop("disabled", true);
+            $("#Save").html("<b>Please Wait...</b>");
+            let url = "http://172.29.30.121:999/api/Category/CreateCategory";
+            if($("#categoryId").val() != null){
+                url = "http://172.29.30.121:999/api/Category/UpdateCategory"
+            }
+            $.ajax({
+                url:url,
+                method:"post",
+                contentType:"application/json",
+                data:JSON.stringify(requestData),
+                success:function(res){
+                    if(res.status == "Ok")
+                    {
+                        SuccessAlert(res.result);
+                        $("#categoryId").val(0);
+                        $("#CategoryName").val("")
+                        GetAllCategory();
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html("Save");
+                    }
+                    else{
+                        DangerAlert(res.mes);
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html("Save");
+                    }
+                },
+                error:function(err){
+                    console.log("Error",err);
+                    $("#Save").prop("disabled", false);
+                    $("#Save").html("Save");
+                }
+            })
+        })
+    })
+
+    
+
+    function GetAllCategory(){
+        $.ajax({
+            url:"http://172.29.30.121:999/api/Category/AllCategory",
+            method:"get",
+            success:function(res){
+                const data = res.results;
+                $("#GetAllCategory").html("");
+                data.map(o=>{
+                  $("#GetAllCategory").append(`<tr>
+                                     <td>${o.categoryId}</td>
+                                     <td>${o.categoryName}</td>
+                                     <td>
+                                         <button type='button' onclick='EditDisplay(${o.categoryId})' class='btn btn-primary'>Edit</button>
+                                      </td>
+                                 </tr>`);
+                })
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+    }
+
+    function EditDisplay(Id){
+        $.ajax({
+            url:"http://172.29.30.121:999/api/Category/CategoryById/" + Id,
+            method:"get",
+            success:function(res){
+                const data = res.results;
+                $("#categoryId").val(data.categoryId);
+                $("#CategoryName").val(data.categoryName);
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+    }
+</script>
+

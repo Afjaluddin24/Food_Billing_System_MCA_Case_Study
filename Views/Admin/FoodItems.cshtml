@@ -1,0 +1,182 @@
+﻿@{
+    ViewData["Title"] = "FoodItems";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="col-md-12 m-auto">
+    <div class="card">
+        <div class="card-header bg-transparent">
+            <div class="col-md-6 text-start">FoodItems</div>
+        </div>
+        <div class="card-body">
+            <div class="col-md-12">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6 mt-2 mb-2">
+                            <b>Food Name</b>
+                            <input type="text" id="FoodName" name="FoodName" class="form-control" />
+                            <input type="number" name="menuFoodId" id="menuFoodId" value="" />
+                        </div>
+                        <div class="col-md-6 mt-2 mb-2">
+                            <b>Category</b>
+                            <select id="Category" class="form-select">
+                                <option value="value">---Select Category---</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mt-2 mb-2">
+                            <b>Size</b>
+                            <input type="text" id="Size" name="Size" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mt-2 mb-2">
+                            <b>Quantity</b>
+                            <input type="number" id="Quantity" name="Quantity" class="form-control" />
+                        </div>
+                        <div class="col-md-4 mt-2 mb-2">
+                            <b>Price</b>
+                            <input type="number" id="Price" name="Price" class="form-control" />
+                        </div>
+                        <div class="col-md-2 mt-3">
+                            <button type="button" id="Save" class="btn btn-outline-warning w-100">Save</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="bg-info text-white mt-3 py-2">
+                    <b class="ms-3">Category Detals</b>
+                </div>
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <td>FoodName</td>
+                            <td>Category</td>
+                            <td>Price</td>
+                            <td>Size</td>
+                            <td>Quantity</td>
+                            <td>Action</td>
+                        </tr>
+                    </thead>
+                    <tbody id="GetAllCategory">
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $.ajax({
+            url:"http://172.29.30.121:999/api/Category/AllCategory",
+            method:"get",
+            success:function(res){
+                const data = res.results;
+                data.map(o=>{
+                  $("#Category").append(`<option value='${o.categoryId}'>${o.categoryName}</options>`);
+                })
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+
+        $(document).ready(function(){
+            GetAllFood();
+        $("#Save").click(function(){
+            const requestData={
+                menuFoodId:parseInt($("#menuFoodId").val()),
+                foodName:$("#FoodName").val(),
+                price:parseInt($("#Price").val()),
+                size:$("#Size").val(),
+                quantity:parseInt($("#Quantity").val()),
+                categoryId:parseInt($("#Category").val())
+            }
+            console.log("Data is",requestData);
+            $("#Save").prop("disabled", true);
+            $("#Save").html("<b>Please Wait...</b>");
+            let url = "http://172.29.30.121:999/api/MenuFood/CreateFoodMenu";
+            if($("#menuFoodId").val() != 0)
+            {
+                url = "http://172.29.30.121:999/api/MenuFood/UpdateFoodMenue";
+            }
+            $.ajax({
+                url:url,
+                method:"post",
+                contentType:"application/json",
+                data:JSON.stringify(requestData),
+                success:function(res){
+                    if(res.status == "Ok")
+                    {
+                        SuccessAlert(res.result);
+                        $("#FoodName").val("");
+                        $("#Price").val("");
+                        $("#Size").val("");
+                        $("#Quantity").val("");
+                        $("#Category").val("");
+                        GetAllFood();
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html("Save");
+                    }
+                    else{
+                        DangerAlert(res.mes);
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html("Save");
+                    }
+                },
+                error:function(err){
+                    console.log("Error",err);
+                    $("#Save").prop("disabled", false);
+                    $("#Save").html("Save");
+                }
+            })
+        })
+    })
+
+    function GetAllFood(){
+        $.ajax({
+            url:"http://172.29.30.121:999/api/MenuFood/GetAllFoodMenue",
+            method:"Get",
+            success:function(res){
+                console.log(res.result);
+                const data = res.result;
+                  $("#GetAllCategory").html("");
+                data.map((o,i)=>{
+                    const index = i + 1;
+                    $("#GetAllCategory").append(`<tr>
+                                      <td>${index}</td>
+                                      <td>${o.foodName}</td>
+                                      <td>${o.categoryName}</td>
+                                      <td>${o.price}</td>
+                                      <td>${o.size}</td>
+                                      <td>${o.quantity}</td>
+                                      <td><button type='button' onclick='GetFoodById(${o.menuFoodId})' class='btn btn-primary'>Edit</button>
+                                  </tr>`);
+                })
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+    }
+
+    function GetFoodById(Id){
+        $.ajax({
+            url:"http://172.29.30.121:999/api/MenuFood/GetFoodMenueById/" + Id,
+            method:"Get",
+            success:function(res){
+                console.log(res.result);
+                const data = res.result;
+                 $("#menuFoodId").val(data.menuFoodId),
+                 $("#FoodName").val(data.foodName),
+                 $("#Price").val(data.price),
+                 $("#Size").val(data.size),
+                 $("#Quantity").val(data.quantity),
+                 $("#Category").val(data.categoryId)
+                
+            },
+            error:function(err){
+                console.log(err);
+            }
+        })
+    }
+</script>
+

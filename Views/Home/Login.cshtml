@@ -1,0 +1,105 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Login</title>
+    <link href="~/link/bootstrap.min.css" rel="stylesheet" />
+    <script src="~/link/bootstrap.bundle.min.js"></script>
+    <script src="~/jquery-3.5.1.js"></script>
+    <link href="~/tostr/toastr.min.css" rel="stylesheet" />
+    <script src="~/tostr/toastr.min.js"></script>
+    <script>
+        function SuccessAlert(Message) {
+            toastr.success(Message);
+        }
+
+        function DangerAlert(Message) {
+            toastr.error(Message);
+        }
+
+        function WarningAlert(Message) {
+            toastr.warning(Message);
+        }
+
+        function InfoAlert(Message) {
+            toastr.info(Message);
+        }
+    </script>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="col-md-4 m-auto mt-5 py-3 bg-success text-center">
+            <h4 class="text-white">Login</h4>
+        </div>
+        <div class="card card-body col-md-4 m-auto">
+            <div class="col-md-12 mt-2 mb-2">
+                <b>User Name</b>
+                <input type="text" id="Name" name="Name" class="form-control" />
+            </div>
+            <div class="col-md-12 mt-2 mb-2">
+                <b>Password</b>
+                <input type="password" id="Password" name="Password" class="form-control" />
+            </div>
+            <div class="col-md-12 mt-4 mb-2">
+                <button type="button" id="Save" class="btn btn-outline-success w-100">Login</button>
+            </div>
+            <div class="col-md-12 mt-2 mb-2 text-center">
+                <label class="text-dark">Forget Password? <a href="#" class="text-danger">Forget Pass</a></label>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(document).ready(function(){
+        $("#Save").click(function(){
+            const requestData ={
+                Username:$("#Name").val(),
+                Password:$("#Password").val()
+            }
+            $("#Save").prop("disabled",true);
+            $("#Save").html('<b>Please wait...</b>');
+            console.log("Data is",requestData);
+            $.ajax({
+                url:"http://172.29.30.121:999/api/Admin/Authenticator",
+                method:"Post",
+                contentType:"application/json",
+                data:JSON.stringify(requestData),
+                success:function(res){
+                    if(res.status == "Ok")
+                    {
+                        SuccessAlert(res.result);
+                        const data = res.data;
+                        console.log("Data is",data);
+                        localStorage.setItem("UserId",data.adminId);
+                        localStorage.setItem("UserName",data.username);
+                        setTimeout(function(){
+                            window.location.href= "Admin/Index"
+                        },2000);
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html('Save');
+                        
+                    }
+                    else{
+                        DangerAlert(res.mes);
+                        $("#Save").prop("disabled", false);
+                        $("#Save").html('Save');
+                    }
+                    
+                },
+                error:function(err){
+                    DangerAlert(res.responseJSON.mes);
+                    $("#Save").prop("disabled", false);
+                    $("#Save").html('Save');
+                }
+            })
+
+        })
+    })
+</script>
+</html>

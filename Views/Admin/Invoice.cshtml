@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "Invoice";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="col-md-12 m-auto">
+    <div class="card">
+        <div class="card-header bg-transparent">
+            <h4>Invoice</h4>
+            <input type="hidden" id="BillName" value="@ViewBag.Name" />
+        </div>
+
+        <div class="card-body">
+
+            <!-- Store Header -->
+            <div class="col-md-12 mt-3 mb-2 py-3 bg-warning text-white text-center">
+                <h3>BBA FOOD STORE</h3>
+                <h5>INVOICE</h5>
+            </div>
+
+            <!-- Bill Info -->
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><b>Bill No</b></td>
+                        <td id="billNo"></td>
+                    </tr>
+                    <tr>
+                        <td><b>Name</b></td>
+                        <td id="billName"></td>
+                    </tr>
+                    <tr>
+                        <td><b>Date</b></td>
+                        <td id="billDate"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Food Details -->
+            <div class="bg-warning text-white mt-3 py-2">
+                <b class="ms-3">Food Details</b>
+            </div>
+
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Food</th>
+                        <th>Price</th>
+                        <th>Size</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="foodTable"></tbody>
+            </table>
+
+            <!-- Total Table -->
+            <div class="col-md-3 ms-auto">
+                <table class="table table-bordered mt-2 mb-2">
+                    <tr>
+                        <th>Sub Total</th>
+                        <td id="subTotal"></td>
+                    </tr>
+                    <tr>
+                        <th>GST (5%)</th>
+                        <td id="gst"></td>
+                    </tr>
+                    <tr style="font-weight:bold;">
+                        <th>Grand Total</th>
+                        <td id="allTotal"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="text-center">
+                <button onclick="window.print()" class="btn btn-success">
+                    Print Invoice
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        GetInvoiceByName();
+    });
+
+    function GetInvoiceByName() {
+
+        const BillName = $("#BillName").val();
+
+        $.ajax({
+            url: "http://172.29.30.121:999/api/Bill/GetBillByBillNo/" + BillName,
+            method: "GET",
+            success: function (res) {
+
+                var data = res.bill;
+
+                // Bill Info
+                $("#billNo").text(data[0].billNo);
+                $("#billName").text(data[0].billName);
+                $("#billDate").text(data[0].billDate.substring(0, 10));
+
+                // Food Table + SubTotal
+                var html = "";
+                var subTotal = 0;
+
+                data.map((o, i) => {
+
+                    var total = o.price * o.orderQut;
+                    subTotal += total;
+
+                    html += `<tr>
+                                <td>${i + 1}</td>
+                                <td>${o.foodName}</td>
+                                <td>${o.price}</td>
+                                <td>${o.size}</td>
+                                <td>${o.orderQut}</td>
+                                <td>${total}</td>
+                             </tr>`;
+                });
+
+                $("#foodTable").html(html);
+
+                // GST 5%
+                var gst = subTotal * 0.05;
+
+                // Grand Total
+                var grandTotal = subTotal + gst;
+
+                // Display Totals
+                $("#subTotal").text(subTotal.toFixed(2));
+                $("#gst").text(gst.toFixed(2));
+                $("#allTotal").text(grandTotal.toFixed(2));
+            },
+            error: function (err) {
+                console.log(err);
+            }
+        });
+    }
+</script>

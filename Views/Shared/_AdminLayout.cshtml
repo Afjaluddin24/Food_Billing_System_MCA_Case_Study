@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+
+    <link href="~/link/bootstrap.min.css" rel="stylesheet" />
+    <script src="~/link/bootstrap.bundle.min.js"></script>
+    <script src="~/jquery-3.5.1.js"></script>
+
+    <link href="~/tostr/toastr.min.css" rel="stylesheet" />
+    <script src="~/tostr/toastr.min.js"></script>
+
+    <script>
+        function SuccessAlert(Message) { toastr.success(Message); }
+        function DangerAlert(Message) { toastr.error(Message); }
+        function WarningAlert(Message) { toastr.warning(Message); }
+        function InfoAlert(Message) { toastr.info(Message); }
+    </script>
+</head>
+
+<body>
+    <div class="container-fluid">
+
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12 bg-warning py-3">
+                <div class="row">
+                    <div class="col-md-6"></div>
+                    <div class="col-md-6 text-end text-white">
+                        Welcome, <b id="UserName"></b>
+                        <button type="button" onclick="LogOut()" class="btn btn-outline-danger">LogOut</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar + Body -->
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 bg-dark min-vh-100">
+                <a href="@Url.Content("~/Admin/Index")" style="text-decoration:none" class="d-block text-white mt-3 ms-3">Home</a>
+                <a href="@Url.Content("~/Admin/Category")" style="text-decoration:none" class="d-block text-white mt-3 ms-3">Category</a>
+                <a href="@Url.Content("~/Admin/FoodItems")" style="text-decoration:none" class="d-block text-white mt-3 ms-3">Food Items</a>
+                <a href="@Url.Content("~/Admin/Orders")" style="text-decoration:none" class="d-block text-white mt-3 ms-3">Invoice</a>
+                <a href="@Url.Content("~/Admin/OrdersDetals")" style="text-decoration:none" class="d-block text-white mt-3 ms-3">Invoice Details</a>
+            </div>
+
+            <!-- Body -->
+            <div class="col-md-10 p-4">
+                @RenderBody()
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="row">
+            <div class="col-12 bg-white text-dark text-center py-2 shadow">
+                &copy; Copy Right Food Bill System 2026
+            </div>
+        </div>
+
+    </div>
+</body>
+
+<script>
+    const User = localStorage.getItem("UserName");
+    $("#UserName").text(User);
+
+
+      function LogOut() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem("UserId");
+            localStorage.removeItem("UserName");
+            window.location.href = "/Login";
+        }
+    }
+
+    if(localStorage.getItem("UserId") == null)
+    {
+        window.location.href = "/Login";
+    }
+</script>
+
+</html>

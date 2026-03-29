@@ -1,0 +1,76 @@
+﻿
+@{
+    ViewData["Title"] = "OrdersDetals";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="col-md-12 m-auto">
+    <div class="card">
+        <div class="card-header bg-transparent">
+            <div class="col-md-6 text-start">Orders</div>
+        </div>
+        <div class="card-body">
+            <div class="col-md-12">
+                <div class="bg-info text-white mt-3 py-2">
+                    <b class="ms-3">Orders Detals</b>
+                </div>
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Food</th>
+                            <th>price</th>
+                            <th>size</th>
+                            <th>orderQut</th>
+                            <th>billName</th>
+                            <th>billDate</th>
+                            <th>subTotal</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="GetAllCategory">
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        GetAllOrders();
+    })
+
+    function GetAllOrders(){
+        $.ajax({
+            url:"http://172.29.30.121:999/api/Bill/GetAllBill",
+            method:"GET",
+            success:function(res){
+              console.log("Data is",res.bill);
+              const data = res.bill;
+               $("#GetAllCategory").html("");
+               data.map((o,i)=>{
+                    const index = i + 1;
+                    $("#GetAllCategory").append(`<tr>
+                                   <td>${index}</td>
+                                   <td>${o.foodName}</td>
+                                   <td>${o.price}</td>
+                                   <td>${o.size}</td>
+                                   <td>${o.orderQut}</td>
+                                   <td>${o.billName}</td>
+                                   <td>${o.billDate}</td>
+                                   <td>${o.subTotal}</td>
+                                   <td><a href='/Admin/Invoice?BillName=${o.billName}' style='text-decoration:none;' class='btn btn-primary'>Invoice</a></td>
+                               </tr>`);
+              })
+            },
+            error:function(err){
+                console.log("Error",err);
+            }
+
+        })
+    }
+</script>
+
+

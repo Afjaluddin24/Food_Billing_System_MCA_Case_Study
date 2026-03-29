@@ -1,0 +1,280 @@
+﻿@{
+    ViewData["Title"] = "Orders";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="col-md-12 m-auto">
+    <div class="card">
+        <div class="card-header bg-transparent">
+            <h4>Orders</h4>
+        </div>
+
+        <div class="card-body">
+            <form onsubmit="return false">
+
+                <!-- Order Date -->
+                <div class="row">
+                    <div class="col-md-4 mt-2">
+                        <label><b>Order Date</b></label>
+                        <input type="date" class="form-control" id="OrderDate" required />
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- Order Items -->
+                <div class="row">
+                    <div class="col-md-3 mt-2">
+                        <label><b>Food Item</b></label>
+                        <select class="form-select" id="FoodId">
+                            <option value="">---Select Food---</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 mt-2">
+                        <label><b>Price</b></label>
+                        <input type="text" class="form-control" id="Price" readonly />
+                    </div>
+
+                    <div class="col-md-2 mt-2">
+                        <label><b>Quantity</b></label>
+                        <input type="number" class="form-control" id="Quantity" />
+                    </div>
+
+                    <div class="col-md-2 mt-2">
+                        <label><b>Total</b></label>
+                        <input type="text" class="form-control" id="Total" readonly />
+                    </div>
+
+                    <div class="col-md-3 mt-4">
+                        <button type="button" onclick="AddorderItems()" class="btn btn-success w-100">Add Item</button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- Table -->
+                <table class="table table-bordered mt-3">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Food</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                            <th>Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTable"></tbody>
+                </table>
+
+                <!-- Totals -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="row">
+                            <div class="col-md-4 mt-2 mb-2">
+                                <label>Sub Total</label>
+                                <input type="text" id="SubTotal" class="form-control mb-2" readonly />
+                            </div>
+                            <div class="col-md-4 mt-2 mb-2">
+                                <label>GST (5%)</label>
+                                <input type="text" id="gst" class="form-control mb-2" readonly />
+                            </div>
+                            <div class="col-md-4 mt-2 mb-2">
+                                <label><b>Grand Total</b></label>
+                                <input type="text" id="GrandTotal" class="form-control" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr />
+
+                <!-- Bill Info -->
+                <div class="row">
+                    <div class="col-md-4 mt-1 mb-2">
+                        <input type="number" id="billNo" class="form-control" placeholder="Bill No" readonly />
+                    </div>
+
+                    <div class="col-md-4 mt-1 mb-2">
+                        <input type="text" id="billName" class="form-control" placeholder="Bill Name" />
+                    </div>
+
+                    <div class="col-md-4 mt-1 mb-2">
+                        <input type="date" id="billDate" class="form-control" />
+                    </div>
+                </div>
+
+                <br />
+
+                <button type="button" id="Save" class="btn btn-outline-success">Save Order</button>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let foodData = [];
+    let orderItems = [];
+    let SubTotal = 0;
+
+    $(document).ready(function () {
+        $.ajax({
+            url: "http://172.29.30.121:999/api/Bill/BillNo",
+            type: "GET",
+            success: function (res) {
+               $("#billNo").val(res.result);
+               console.log("Bill no",res.result);
+            },
+            error:function(err)
+            {
+              console.log(err);
+            }
+        })
+        // Load Food List
+        $.ajax({
+            url: "http://172.29.30.121:999/api/MenuFood/GetAllFoodMenue",
+            type: "GET",
+            success: function (res) {
+                foodData = res.result;
+
+                $.each(foodData, function (i, item) {
+                    $("#FoodId").append(
+                        `<option value="${item.menuFoodId}"
+                                 data-price="${item.price}"
+                                 data-qty="${item.quantity}">
+                            ${item.foodName} (Stock: ${item.quantity})
+                        </option>`
+                    );
+                });
+            }
+        });
+
+        // Food Change
+        $("#FoodId").change(function () {
+            let price = $("#FoodId option:selected").data("price");
+            let qty = $("#FoodId option:selected").data("qty");
+
+            $("#Price").val(price);
+            $("#Quantity").val("");
+            $("#Total").val("");
+
+            $("#Quantity").attr("max", qty);
+        });
+
+        // Quantity -> Total + Stock Check
+        $("#Quantity").keyup(function () {
+            let price = parseFloat($("#Price").val()) || 0;
+            let qty = parseFloat($("#Quantity").val()) || 0;
+            let maxQty = parseFloat($("#Quantity").attr("max")) || 0;
+
+            if (qty > maxQty) {
+                alert("Only " + maxQty + " Qty Available!");
+                $("#Quantity").val(maxQty);
+                qty = maxQty;
+            }
+
+            let total = price * qty;
+            $("#Total").val(total);
+        });
+
+        // Save Order
+        $("#Save").click(function () {
+
+            let gst = (SubTotal * 5) / 100;
+            let grandTotal = SubTotal + gst;
+
+            const bills = {
+                billNo: $("#billNo").val(),
+                billName: $("#billName").val(),
+                subTotal: SubTotal,
+                gst: gst,
+                grandTotal: grandTotal,
+                billDate: $("#billDate").val()
+            };
+
+            // Get Data  in Array using Display call name 
+
+            let items = orderItems.map(o => ({
+                menuFoodId: o.foodId,
+                quantity: o.quantity,
+                price: o.price,
+                total: o.total
+            }));
+
+            const requestData = {
+                bills: bills,
+                items: items
+            };
+
+            console.log("Final JSON:", requestData);
+
+            $.ajax({
+                url: "http://172.29.30.121:999/api/OrderDetails/CreateOrder",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(requestData),
+                success: function (res) {
+                    alert("Order Saved Successfully");
+                    location.reload();
+                },
+                error: function (err) {
+                    console.log(err);
+                    alert("Error saving order");
+                }
+            });
+        });
+    });
+
+    function AddorderItems() {
+        let foodName = $("#FoodId option:selected").text();
+        let foodId = $("#FoodId").val();
+        let quantity = $("#Quantity").val();
+        let price = $("#Price").val();
+        let total = quantity * price;
+
+        let item = {
+            foodId: foodId,
+            foodName: foodName,
+            quantity: quantity,
+            price: price,
+            total: total
+        };
+
+        orderItems.push(item);
+        DisplayItems();
+    }
+
+    function DisplayItems() {
+        $("#orderTable").html("");
+        SubTotal = 0;
+
+        orderItems.forEach((o, i) => {
+            SubTotal += Number(o.total);
+
+            $("#orderTable").append(`
+                <tr>
+                    <td>${o.foodName}</td>
+                    <td>${o.price}</td>
+                    <td>${o.quantity}</td>
+                    <td>${o.total}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="removeItem(${i})">X</button>
+                    </td>
+                </tr>
+            `);
+        });
+
+        let gst = (SubTotal * 5) / 100;
+        let grandTotal = SubTotal + gst;
+
+        $("#SubTotal").val(SubTotal);
+        $("#gst").val(gst);
+        $("#GrandTotal").val(grandTotal);
+    }
+
+    function removeItem(index) {
+        orderItems.splice(index, 1);
+        DisplayItems();
+    }
+</script>
